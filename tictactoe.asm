@@ -99,9 +99,6 @@ EndingCond:
 endzy:
 endm
 WinCompCheck macro 
-mov dl,"A"
-mov ah,2
-int 21h
 cmp ind1,"X"
 je compare1
 cmp ind2,"X"
@@ -184,11 +181,103 @@ endname:
     int 21h
 endz:
 endm
+
+intelligence macro
+cmp ind1,'_'
+jne answerJumper
+cmp ind2,'_'
+jne answerJumper1
+cmp ind3,'_'
+jne answerJumper2
+cmp ind4,'_'
+jne answerJumper3
+cmp ind6,'_'
+jne answerJumper4
+cmp ind7,'_'
+jne answerJumper5
+cmp ind8,'_'
+jne answerJumper6
+cmp ind9,"_"
+jne answerJumper7
+jmp RandComparison
+answerJumper:
+    jmp answer1
+answerJumper1:
+    jmp answer2
+answerJumper2:
+    jmp answer3
+answerJumper3:
+    jmp answer4
+answerJumper4:
+    jmp answer5
+answerJumper5:
+    jmp answer6
+answerJumper6:
+    jmp answer7
+answerJumper7:
+    jmp answer8
+answer1:
+    MoreComparison ind1,ind2,ind3,CheckForEmpty1,EndIt1,'3',setRand1
+    MoreComparison ind1,ind4,ind7,CheckForEmpty2,EndIt2,'7',setRand2
+    MoreComparison ind1,ind5,ind9,CheckForEmpty3,EndIt3,'9',setRand3
+    MoreComparison ind1,ind7,ind4,CheckForEmpty4,EndIt4,'4',setRand4
+    MoreComparison ind1,ind3,ind2,CheckForEmpty5,EndIt5,'2',setRand5
+    MoreComparison ind1,ind9,ind5,CheckForEmpty6,EndIt6,'5',setRand6
+answer2:
+    MoreComparison ind2,ind5,ind8,CheckForEmpty7,EndIt7,'8',setRand7
+    MoreComparison ind2,ind8,ind5,CheckForEmpty11,EndIt11,'5',setRand11
+answer3:
+    MoreComparison ind3,ind6,ind9,CheckForEmpty8,EndIt8,'9',setRand8
+    MoreComparison ind3,ind5,ind7,CheckForEmpty9,EndIt9,'7',setRand9
+    MoreComparison ind3,ind2,ind1,CheckForEmpty10,EndIt10,'1',setRand10
+answer4:
+    MoreComparison ind4,ind5,ind6,CheckForEmpty12,EndIt12,'6',setRand12
+    MoreComparison ind4,ind6,ind5,CheckForEmpty13,EndIt13,'5',setRand13
+answer5:
+    MoreComparison ind6,ind5,ind4,CheckForEmpty14,EndIt14,'4',setRand14
+answer6:
+    MoreComparison ind7,ind4,ind1,CheckForEmpty15,EndIt15,'1',setRand15
+    MoreComparison ind7,ind5,ind3,CheckForEmpty16,EndIt16,'3',setRand16
+    MoreComparison ind7,ind8,ind9,CheckForEmpty17,EndIt17,'9',setRand17
+answer7:
+    MoreComparison ind8,ind5,ind2,CheckForEmpty18,EndIt18,'2',setRand18
+answer8:
+    MoreComparison ind9,ind8,ind7,CheckForEmpty19,EndIt19,'7',setRand19
+    MoreComparison ind9,ind5,ind1,CheckForEmpty20,EndIt20,'1',setRand20
+    MoreComparison ind9,ind1,ind5,CheckForEmpty21,EndIt21,'5',setRand21
+    MoreComparison ind9,ind6,ind3,CheckForEmpty22,EndIt22,'3',setRand22
+jmp RANDCOMPARISON
+endm
+MoreComparison macro pos1,pos2,pos3,CheckForEmpty,endIt,setWhat,setRand
+cmp pos1,'_'
+jne CheckForEmpty
+jmp endIt
+CheckForEmpty:
+    mov cl,pos1
+    cmp pos2,cl
+    je setRand
+    jmp endIt
+    setRand:
+        cmp pos3,'_'
+        jne endIt
+        mov RAND,setWhat
+        jmp RANDComparison
+endIt:
+endm
+
 ;Firts main jump
 firstJump macro
-cmp turnState,'0'
-je UserTurn
-jmp ComputerTurn
+cmp playing,'1'
+je turnNextUser
+jmp computerTurner
+turnNextUser:
+    cmp turnState,'0'
+    je UserTurn
+    jmp OtherUser
+computerTurner:
+    cmp turnState,'0'
+    je UserTurn
+    jmp ComputerTurn
 endm
 
 ;Chechking for second
@@ -199,9 +288,21 @@ jmp finaljumpp
 endm
 
 ;Final user pass
-finalUserPass macro what
+finalUserPass macro what,TurnForOtherUser,TurnForComputer
 setVar what,'O'
-mov turnState,"1"
+cmp playing,'1'
+je TurnForOtherUser
+jmp TurnForComputer
+TurnForOtherUser:
+    mov turnState,'2'
+    jmp Start
+TurnForComputer:
+    mov turnState,"1"
+    jmp Start
+endm
+finalUser1Pass macro what
+setVar what,'X'
+mov turnState,"0"
 jmp Start
 endm
 ;Final Computer Pass
@@ -251,6 +352,9 @@ Dosseg
     passNextC db "--------------------pass Computer---------"
     passNextU db "--------------------pass User---------"
     turnState db "0"
+    testor db "-----------------------running--------------------$"
+    userMsg db " -----------------Press 1 to play with Computer----------------$"
+    userMsg1 db " ----------------Press 2 to play with friend--------------$"
     stopper db ?
     ;Main variables
     ind1 db ?
@@ -265,16 +369,24 @@ Dosseg
     RAND db ?
     UserRecentPos db ?
     CompRecentPos db ?
+    playing db ?
 .code
 main proc
 mov ax,@data
 mov ds,ax
 mov bl,47
 mov stopper,47
-mov dx,"S"
-mov ah,2
+lea dx,userMsg
+mov ah,09h
 int 21h
 call shiftLine
+lea dx,userMsg1
+mov ah,09h
+int 21h
+call shiftLine
+mov ah,8
+int 21h
+mov playing,al
 mov ind1,"_"
 mov ind2,"_"
 mov ind3,"_"
@@ -284,6 +396,8 @@ mov ind6,"_"
 mov ind7,"_"
 mov ind8,"_"
 mov ind9,"_"
+cmp playing,'1'
+je Start
 call randomNum
 cmp RAND,"4"
 jle statechanger
@@ -333,9 +447,6 @@ Start:
         endproJumper:
             call endPro
         endingStage:
-            lea dx, stopper
-            mov ah,2
-            int 21h
             cmp stopper,'9'
             call shiftLine
             je endproJumper
@@ -343,9 +454,6 @@ Start:
     Decider:
         firstJump
     UserTurn:
-        lea dx,UserTest
-        mov ah,09h
-        int 21h
         mov ah,8
         int 21h
         cmp al,'1'
@@ -392,70 +500,177 @@ Start:
             UniCheck1 ind9,check9,StartJump
         
         check1:
-            UniCheck2 ind1,pass1,startPrintingJump
+            UniCheck2 ind1,passto1Jump,startPrintingJump
         check2:
-            UniCheck2 ind2,pass2,startPrintingJump
+            UniCheck2 ind2,passto2Jump,startPrintingJump
         check3:
-            UniCheck2 ind3,pass3,startPrintingJump
+            UniCheck2 ind3,passto3Jump,startPrintingJump
+        check4:
+            UniCheck2 ind4,passto4Jump,startPrintingJump
         startPrintingJump:
             call occupied
             jmp UserTurn
-        check4:
-            UniCheck2 ind4,pass4,startPrintingJump
         check5:
-            UniCheck2 ind5,pass5,startPrintingJump
+            UniCheck2 ind5,passto5Jump,startPrintingJump
         check6:
-            UniCheck2 ind6,pass6,startPrintingJump
+            UniCheck2 ind6,passto6Jump,startPrintingJump
         check7:
-            UniCheck2 ind7,pass7,startPrintingJump
+            UniCheck2 ind7,passto7Jump,startPrintingJump
         check8:
-            UniCheck2 ind8,pass8,startPrintingJump
+            UniCheck2 ind8,passto8Jump,startPrintingJump
         check9:
-            UniCheck2 ind9,pass9,startPrintingJump
+            UniCheck2 ind9,passto9Jump,startPrintingJump
+        passto1Jump:
+            jmp pass1
+        passto2Jump:
+            jmp pass2
+        passto3Jump:
+            jmp pass3
+        passto4Jump:
+            jmp pass4
+        passto5Jump:
+            jmp pass5
+        passto6Jump:
+            jmp pass6
+        passto7Jump:
+            jmp pass7
+        passto8Jump:
+            jmp pass8
+        passto9Jump:
+            jmp pass9
         ;passes
         pass1:
-            finalUserPass ind1
+            finalUserPass ind1,TurnForOtherUser1,TurnForComputer1
         pass2:
-            finalUserPass ind2
+            finalUserPass ind2,TurnForOtherUser2,TurnForComputer2
         pass3:
-            finalUserPass ind3
+            finalUserPass ind3,TurnForOtherUser3,TurnForComputer3
          pass4:
-            finalUserPass ind4
+            finalUserPass ind4,TurnForOtherUser4,TurnForComputer4
          pass5:
-            finalUserPass ind5
+            finalUserPass ind5,TurnForOtherUser5,TurnForComputer5
          pass6:
-            finalUserPass ind6
+            finalUserPass ind6,TurnForOtherUser6,TurnForComputer6
          pass7:
-            finalUserPass ind7
+            finalUserPass ind7,TurnForOtherUser7,TurnForComputer7
          pass8:
-            finalUserPass ind8
+            finalUserPass ind8,TurnForOtherUser8,TurnForComputer8
          pass9:
-            finalUserPass ind9
+            finalUserPass ind9,TurnForOtherUser9,TurnForComputer9
+
+    OtherUser:
+        mov ah,8
+        int 21h
+        cmp al,'1'
+        JE pressed01
+        cmp al,'3'
+        JE pressed03
+        cmp al,'2'
+        je pressed02
+        cmp al,'4'
+        je pressed04
+        cmp al,'5'
+        je pressed05
+        cmp al,'6'
+        je pressed06
+        cmp al,'7'
+        je jumpto07
+        cmp al,'8'
+        je jumpto08
+        jmp pressed09
+        jumpto07:
+         jmp pressed07
+        jumpto08:
+            jmp pressed08
+        pressed01:
+            UniCheck1 ind1,check01,StartJump1
+        pressed02:
+            UniCheck1 ind2,check02,StartJump1
+        pressed03:
+            UniCheck1 ind3,check03,StartJump1
+        pressed04:
+            UniCheck1 ind4,check04,StartJump1
+        pressed05:
+            UniCheck1 ind5,check05,StartJump1
+        pressed06:
+            UniCheck1 ind6,check06,StartJump1
+        pressed07:
+            UniCheck1 ind7,check07,StartJump1
+        StartJump1:
+            call occupied
+            jmp startPrinting
+        pressed08:
+            UniCheck1 ind8,check08,StartJump1
+        pressed09:
+            UniCheck1 ind9,check09,StartJump1
+        
+        check01:
+            UniCheck2 ind1,pass01,startPrintingJump1
+        check02:
+            UniCheck2 ind2,pass02,startPrintingJump1
+        check03:
+            UniCheck2 ind3,pass03,startPrintingJump1
+        startPrintingJump1:
+            call occupied
+            jmp UserTurn
+        check04:
+            UniCheck2 ind4,pass04,startPrintingJump1
+        check05:
+            UniCheck2 ind5,pass05,startPrintingJump1
+        check06:
+            UniCheck2 ind6,pass06,startPrintingJump1
+        check07:
+            UniCheck2 ind7,pass07,startPrintingJump1
+        check08:
+            UniCheck2 ind8,pass08,startPrintingJump1
+        check09:
+            UniCheck2 ind9,pass09,startPrintingJump1
+        ;passes
+        pass01:
+            finalUser1Pass ind1
+        pass02:
+            finalUser1Pass ind2
+        pass03:
+            finalUser1Pass ind3
+         pass04:
+            finalUser1Pass ind4
+         pass05:
+            finalUser1Pass ind5
+         pass06:
+            finalUser1Pass ind6
+         pass07:
+            finalUser1Pass ind7
+         pass08:
+            finalUser1Pass ind8
+         pass09:
+            finalUser1Pass ind9
 
     ComputerTurn:
         randomAgain:
             call randomNum
-            cmp RAND,"1"
-            JE Got1
-            cmp RAND,"2"
-            JE Got2
-            cmp RAND,"3"
-            JE Got3
-            cmp RAND,"4"
-            JE Got4
-            cmp RAND,"5"
-            JE Got5
-            cmp RAND,"6"
-            JE Got6
-            cmp RAND,"7"
-            JE jumpcomp7
-            cmp RAND,"8"
-            JE jumpComp8
-            jmp Got9
-            jumpcomp7:
-                jmp Got7
-            jumpComp8:
-                jmp Got8
+            intelligence
+            RandComparison:
+                cmp RAND,"1"
+                JE Got1
+                cmp RAND,"2"
+                JE Got2
+                cmp RAND,"3"
+                JE Got3
+                cmp RAND,"4"
+                JE Got4
+                cmp RAND,"5"
+                JE Got5
+                cmp RAND,"6"
+                JE Got6
+                cmp RAND,"7"
+                JE jumpcomp7
+                cmp RAND,"8"
+                JE jumpComp8
+                jmp Got9
+                jumpcomp7:
+                    jmp Got7
+                jumpComp8:
+                    jmp Got8
         Got1:
             UniCheck1 ind1,cmpcheck1,compJump
         Got2:
