@@ -1,20 +1,19 @@
-;Variable Printing Macro
+;Fuction to take variable as input and Print it by adding a space before printing.
 printVarSP macro arg
 mov dl," "
 mov ah,2
 int 21h
 mov dl,arg
-; add dl,48
 mov ah,2
 int 21h
 endm
-;AfterPressing
+;First Universal(for both Computer and User) Condition to check for available space to print.
 UniCheck1 macro index,repeat,nextCheck
 cmp index,'O'
 JE nextCheck
 jmp repeat
 endm
-
+;Checking for all possible way of user's victory.
 WinCheckUser macro
 cmp ind1,"O"
 je Ucompare1
@@ -82,6 +81,7 @@ Ucompare5:
     ComparerUser ind5,ind6,Jump8,End8,endzy8
     jmp CompWin
 endm
+;conditions for termination of program on user's victory 
 ComparerUser macro second,third,jumpingCond,EndingCond,endzy
 cmp second,'O'
 je jumpingCond
@@ -98,6 +98,7 @@ EndingCond:
     int 21h
 endzy:
 endm
+;Checking for all possible way of computers's victory.
 WinCompCheck macro 
 cmp ind1,"X"
 je compare1
@@ -165,6 +166,7 @@ compare5:
     ComparerComp ind5,ind6,jumper8,ender8,endz8
     jmp endingStage
 endm
+;conditions for termination of program on computers's victory 
 ComparerComp macro second,third,jname,endname,endz
 cmp second,'X'
 je jname
@@ -181,7 +183,7 @@ endname:
     int 21h
 endz:
 endm
-
+;training computer to make move
 intelligence macro
 cmp ind1,'_'
 jne answerJumper
@@ -248,6 +250,7 @@ answer8:
     MoreComparison ind9,ind6,ind3,CheckForEmpty22,EndIt22,'3',setRand22
 jmp RANDCOMPARISON
 endm
+;checking for conditions to make computer's move.
 MoreComparison macro pos1,pos2,pos3,CheckForEmpty,endIt,setWhat,setRand
 cmp pos1,'_'
 jne CheckForEmpty
@@ -261,11 +264,13 @@ CheckForEmpty:
         cmp pos3,'_'
         jne endIt
         mov RAND,setWhat
+        cmp pos1,'O'
+        je endIt
         jmp RANDComparison
 endIt:
 endm
 
-;Firts main jump
+;Firts main jump to decide the turn (turn of computer or user)
 firstJump macro
 cmp playing,'1'
 je turnNextUser
@@ -280,14 +285,14 @@ computerTurner:
     jmp ComputerTurn
 endm
 
-;Chechking for second
+;second universal check for available space.
 UniCheck2 macro index,jumpto0,finaljumpp
 cmp index,'X'
 JNE jumpto0
 jmp finaljumpp
 endm
 
-;Final user pass
+;Setting the other's person or Computer's turn.
 finalUserPass macro what,TurnForOtherUser,TurnForComputer
 setVar what,'O'
 cmp playing,'1'
@@ -300,18 +305,19 @@ TurnForComputer:
     mov turnState,"1"
     jmp Start
 endm
+;Setting the other user's turn after first user's turn
 finalUser1Pass macro what
 setVar what,'X'
 mov turnState,"0"
 jmp Start
 endm
-;Final Computer Pass
+;Setting the user's turn after computer's turn
 finalCompPass macro index
 setVar index,"X"
 mov turnState ,"0"
 jmp Start
 endm
-;Printing String
+;Macro to print a string by taking variable as an input
 PrintStr macro arg
 lea dx , arg
 mov ah,09h
@@ -338,25 +344,19 @@ Dosseg
 .model small
 .stack 100h
 .data
-;Messages
+;Messages/variables
     player1 db " Choose these options to play:$ "
     occupiedMsg db " ----------This place is already occupied----------$"
     enterAgain db " ----------Please Input Again----------$"
-    occupiedMsg1 db " xxxxxxxxxxxxxxxxxxxxx---Computer---xxxxxxxxxxxxxxxxxxxxxxxxx$"
-    enterAgain1 db " xxxxxxxxxxxxxxxxxxxxxxxxx---input again---xxxxxxxxxxxxxxxxxxxx$"
-    TestVar db " ---------------------Here--------------------$"
-    drawn db "-------------------Match Got Drawn----------------"
-    UserTest db " ---------------------User Test--------------------$"
+    drawn db "-------------------Match Got Drawn!----------------$"
     youwon db "-----------------Congrats! you won---------$"
     compwon db "-----------------You lose!---------------$"
-    passNextC db "--------------------pass Computer---------"
-    passNextU db "--------------------pass User---------"
     turnState db "0"
-    testor db "-----------------------running--------------------$"
-    userMsg db " -----------------Press 1 to play with Computer----------------$"
-    userMsg1 db " ----------------Press 2 to play with friend--------------$"
+    userMsg db " -----------------Press 1 to play with friend----------------$"
+    userMsg1 db " ----------------Press 2 to play with computer--------------$"
     stopper db ?
-    ;Main variables
+    ;Main variables of program
+    ;Defining indexes
     ind1 db ?
     ind2 db ?
     ind3 db ?
@@ -374,8 +374,9 @@ Dosseg
 main proc
 mov ax,@data
 mov ds,ax
-mov bl,47
+;Making stopper 0 
 mov stopper,47
+;Messages Printing
 lea dx,userMsg
 mov ah,09h
 int 21h
@@ -384,9 +385,12 @@ lea dx,userMsg1
 mov ah,09h
 int 21h
 call shiftLine
+;Taking Input to decide mode of the game
 mov ah,8
 int 21h
+;Assigning playing that which mode is selected
 mov playing,al
+;printing empty spaces
 mov ind1,"_"
 mov ind2,"_"
 mov ind3,"_"
@@ -396,8 +400,10 @@ mov ind6,"_"
 mov ind7,"_"
 mov ind8,"_"
 mov ind9,"_"
+;Comparing to start program using user's input
 cmp playing,'1'
 je Start
+;Generate Random number
 call randomNum
 cmp RAND,"4"
 jle statechanger
@@ -767,16 +773,6 @@ int 21h
 ret
 occupied endp
 occupied1 proc
-call shiftLine
-lea dx,occupiedmsg1
-mov ah,09h
-int 21h
-call shiftLine
-lea dx,enteragain1
-mov ah,09h
-int 21h
-ret
-occupied1 endp
 ;Random number gamerator
 randomNum proc
 generator:
